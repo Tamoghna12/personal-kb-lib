@@ -49,7 +49,58 @@ def _is_oom(exc: Exception) -> bool:
     return "out of memory" in msg or "outofmemory" in msg
 
 
+_LIST_NUM_RE = re.compile(r"^[-*•]?\s*(\d{1,4})\s+(\S.*)", re.MULTILINE)
+# Strips a trailing line-number from headings: "## Conclusions: 27" or "## Introduction 35"
+# Only matches 2+ digit numbers to avoid stripping "## Figure 3" or "## Step 1".
+_HEADING_TRAIL_NUM_RE = re.compile(r"^(#{1,6}\s+.*?\S):?\s+(\d{2,})\s*$", re.MULTILINE)
+
+
+def _strip_manuscript_line_numbers(text: str) -> str:
+    """Remove sequential line numbers added by preprint servers (medRxiv, bioRxiv).
+
+    These appear as '- N text' list items where N is a consecutive integer.
+    Only strips when >50% of matched numbers differ by 1 (true line-number sequence).
+    Also fixes headings that absorbed a trailing number ('## Conclusions: 27').
+    """
+    lines = text.split("\n")
+    matches: list[tuple[int, int, str]] = []  # (line_idx, number, rest)
+    for i, line in enumerate(lines):
+        m = _LIST_NUM_RE.match(line.strip())
+        if m:
+            matches.append((i, int(m.group(1)), m.group(2)))
+
+    if len(matches) < 5:
+        return text
+
+    nums = [n for _, n, _ in matches]
+    diffs = [nums[j + 1] - nums[j] for j in range(len(nums) - 1)]
+    if not diffs or sum(d == 1 for d in diffs) / len(diffs) < 0.5:
+        return text
+
+    min_num = min(nums)
+    max_num = max(nums)
+
+    stripped = {i: rest for i, _, rest in matches}
+    result = []
+    for i, line in enumerate(lines):
+        if i in stripped:
+            result.append(stripped[i])
+        else:
+            stripped_line = line.strip()
+            # Drop lines that are only a bare line number (blank lines in the manuscript)
+            if re.fullmatch(r"\d{1,4}", stripped_line) and min_num <= int(stripped_line) <= max_num:
+                continue
+            # Strip dangling "- " bullet prefix left after number removal
+            if stripped_line.startswith("- ") and not re.match(r"^- \d", stripped_line):
+                result.append(stripped_line[2:])
+            else:
+                # Fix "## Heading: 27" → "## Heading"
+                result.append(_HEADING_TRAIL_NUM_RE.sub(r"\1", line))
+    return "\n".join(result)
+
+
 def _clean(text: str) -> str:
+    text = _strip_manuscript_line_numbers(text)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
 

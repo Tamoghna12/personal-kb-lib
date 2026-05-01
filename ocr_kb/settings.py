@@ -149,6 +149,9 @@ class Settings(BaseSettings):
     max_image_pixels: int = 1_310_720   # 1280×1024 — hard cap before base64-encoding
     model_max_new_tokens: int = 2048    # caps generation length on both backends
     rag_chunk_chars: int = 600          # chars per document snippet in RAG context
+    # Timeout for a single vision-model API call (seconds). Local inference on
+    # complex scientific figures can take 60-120 s; raise if you see timeouts.
+    vision_timeout: float = 120.0
 
     @field_validator("image_dpi")
     @classmethod
@@ -176,6 +179,13 @@ class Settings(BaseSettings):
     def vram_limits_positive(cls, v: int) -> int:
         if v <= 0:
             raise ValueError("must be positive")
+        return v
+
+    @field_validator("vision_timeout")
+    @classmethod
+    def timeout_positive(cls, v: float) -> float:
+        if v <= 0:
+            raise ValueError("vision_timeout must be positive")
         return v
 
 

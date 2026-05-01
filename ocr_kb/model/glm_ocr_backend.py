@@ -20,7 +20,7 @@ from ocr_kb.settings import Settings
 
 _RETRYABLE = (APIConnectionError, APITimeoutError, RateLimitError, InternalServerError)
 _DEFAULT_MAX_TOKENS = 4096
-_DEFAULT_TIMEOUT = 30.0  # seconds; local vLLM should respond well inside this
+_DEFAULT_TIMEOUT = 120.0  # seconds; complex scientific figures can take 60-120 s
 
 
 def _encode_image(image: Image.Image, fmt: str = "JPEG") -> str:
@@ -65,7 +65,7 @@ def run_ocr(
     *vision_model* overrides the model name from settings for this call only.
     Retries on transient failures; does NOT retry on auth or bad-request errors.
     """
-    client = _build_client(settings)
+    client = _build_client(settings, timeout=settings.vision_timeout)
     model = vision_model or settings.vision_model_name
     img = _resize_for_vram(request.image, settings.max_image_pixels)
     data_uri = f"data:image/jpeg;base64,{_encode_image(img)}"
