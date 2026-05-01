@@ -7,12 +7,14 @@ SQLite with full-text search. Ask questions in plain English and get cited answe
 all on your own hardware, no cloud required.
 
 **Key properties:**
+
 - All inference runs locally via **Ollama** or LM Studio — no API keys, no data leaves your machine
 - Two dedicated model slots: **vision model** for OCR/image extraction, **text model** for enrichment and RAG
+- **Structured markdown extraction** — native-text PDFs are converted to heading-aware, table-formatted markdown with bold figure captions and italic section titles via `pymupdf4llm`; scanned PDFs fall back to the vision model
 - Embedded image extraction — figures, charts, and diagrams in PDFs are automatically described and made searchable
 - Per-run model override — switch models for a single ingest or ask without changing config
 - Deduplication on re-ingest — same file updated in-place, existing tags/category preserved
-- **Hybrid semantic + keyword search** — FTS5 full-text search merged with sentence-transformer embeddings via Reciprocal Rank Fusion
+- **Hybrid semantic + keyword search** — FTS5 full-text search merged with embeddings via Reciprocal Rank Fusion; supports both Ollama-served embedding models (e.g. `qwen3-embedding:4b`) and sentence-transformers
 - RAG question-answering with inline citations and source map
 - **Observability** — structured logging of ingest speed, search latency, and errors to `kb_data/logs/`
 - **Error recovery** — failed documents are tracked in a dead-letter queue with retry logic
@@ -138,10 +140,29 @@ RAG_CHUNK_CHARS=600               # chars per retrieved snippet in ask
 
 ```bash
 ENABLE_EMBEDDINGS=true            # hybrid FTS5 + semantic search via Reciprocal Rank Fusion
-EMBEDDING_MODEL=all-MiniLM-L6-v2  # sentence-transformers model (auto-cached, lazy-loaded)
+
+# sentence-transformers model (HuggingFace, auto-cached):
+EMBEDDING_MODEL=all-MiniLM-L6-v2
+
+# OR an Ollama-served embedding model (name:tag format auto-detected):
+EMBEDDING_MODEL=qwen3-embedding:4b
 ```
 
-Requires: `pip install sentence-transformers`. If not installed, search gracefully degrades to FTS5-only.
+Ollama embedding models are routed through `OLLAMA_BASE_URL/v1/embeddings` automatically — no extra config needed. For sentence-transformers: `pip install sentence-transformers`. If neither is available, search degrades to FTS5-only.
+
+**PDF extraction quality:**
+
+```bash
+USE_PYMUPDF4LLM=true              # structured markdown extraction for native-text PDFs (default)
+```
+
+When enabled, native-text PDFs are converted to heading-aware markdown with:
+- `#` / `##` headings detected from font sizes
+- Abstract and ARTICLE INFO rendered as markdown tables
+- Bold figure captions (`**Fig. 1.**`), italic section headings
+- Running journal headers and page-number footers stripped automatically
+
+Scanned or handwritten PDFs automatically fall back to the vision model (glm-ocr / llava). Set `USE_PYMUPDF4LLM=false` to always use the vision model.
 
 **Monitoring and error recovery:**
 
@@ -224,9 +245,14 @@ Accepts: PDF, PNG, JPG, TIFF, plain text, Markdown. Directories are processed
 recursively. Re-ingesting the same file updates existing entries in-place —
 existing tags and category are **preserved** if not explicitly specified.
 
-For PDFs, each page is OCR'd as a full-page image. Additionally, any embedded
-images on the page (figures, charts, diagrams) are extracted and described by the
-vision model. Descriptions are appended to the page text as `[Figure N]: ...`,
+For **native-text PDFs** (most research papers, reports), pages are converted to
+structured markdown using `pymupdf4llm`: headings are detected from font sizes,
+tables are rendered as markdown tables, figure captions are bolded, and running
+headers/footers are stripped. This produces LLM-friendly text without any model calls.
+
+For **scanned or image-only PDFs** (handwritten notes, photographs), pages are
+rendered as images and sent to the vision model for OCR. Any embedded images
+(figures, charts, diagrams) are described and appended as `[Figure N]: ...`,
 making them searchable and available in RAG responses.
 
 ```bash
@@ -737,10 +763,11 @@ ocr_kb/
   monitoring.py        logging, timing, observability (ingest speed, search latency, error tracking)
   prompts.py           LLM prompt templates (OCR, figure description, RAG, wiki)
   ingest/
-    loader.py          file-type detection and routing
-    pdf_reader.py      PDF → page images + embedded image extraction (pypdfium2)
-    image_reader.py    image loading and pre-processing
-    batch_builder.py   batching for multi-page documents; populates embedded_images
+    loader.py              file-type detection and routing
+    pdf_reader.py          PDF → page images + native text (pypdfium2); strips headers/footers
+    pymupdf4llm_reader.py  structured markdown extraction for native-text PDFs (pymupdf4llm)
+    image_reader.py        image loading and pre-processing
+    batch_builder.py       batching for multi-page docs; selects text vs OCR path per page
   model/
     glm_ocr_backend.py vision model client — routes to Ollama or LM Studio
     gemma_backend.py   text model client — routes to Ollama or LM Studio

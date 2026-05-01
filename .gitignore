@@ -27,8 +27,10 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 
-# Project runtime data
+# Project runtime data (generated at ingest time — not tracked)
 kb_data/*.db
+kb_data/logs/
+kb_data/markdown/
 kb_data/extracted_images/
 !kb_data/.gitkeep
 
