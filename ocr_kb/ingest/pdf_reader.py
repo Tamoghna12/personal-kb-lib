@@ -79,29 +79,71 @@ def _render_page(page: pdfium.PdfPage, dpi: int) -> Image.Image:
 
 
 def _clean_pdf_text(text: str) -> str:
-    """Fix PDF soft-hyphen artifacts produced by pypdfium2.
+    """Fix character-level artifacts produced by pypdfium2.
 
-    pypdfium2 maps the PDF soft-hyphen (SHY, U+00AD) to U+FFFE, yielding
-    fragments like 'imple￾ment' instead of 'implement'.  However when both
-    sides are all-caps (e.g. 'NIR￾SRS') the hyphen is a real delimiter, not
-    a line-break, so it is preserved as '-'.  U+00AD is always removed.
+    1. U+FFFE / U+00AD  — soft-hyphen misencoding that splits words across
+       lines.  ALL-CAPS sequences keep a real '-' (e.g. NIR-SRS); otherwise
+       the artifact is removed to rejoin the halves.
+    2. U+0002 (STX)     — column-break control character that also splits words
+       across two-column layouts (e.g. 'trans\x02formations').
+    3. Normalise CRLF → LF and collapse runs of blank lines to two newlines.
     """
     import re
-    # All-caps on both sides → real abbreviation hyphen (e.g. NIR-SRS)
+    # Soft-hyphen: all-caps on both sides → preserve as real hyphen
     text = re.sub(r"([A-Z]+)￾([A-Z]+)", r"\1-\2", text)
-    # Remaining ￾ (and actual soft hyphens) are line-break artifacts → remove
-    text = re.sub(r"[­￾]", "", text)
-    return text
+    # Remaining soft-hyphens and column-break chars → join word halves
+    text = re.sub(r"[­￾\x02]", "", text)
+    # Normalise line endings and blank-line runs
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def _extract_figure_captions(footer_text: str) -> str:
+    """Pull figure captions from the footer band, stripping bare page numbers."""
+    import re
+    lines = [ln.strip() for ln in footer_text.splitlines() if ln.strip()]
+    caption_lines: list[str] = []
+    for ln in lines:
+        if re.fullmatch(r"\d{1,4}", ln):
+            continue  # bare page number — discard
+        if re.match(r"(Fig\.|Figure|Table)\s*\d+", ln, re.IGNORECASE):
+            caption_lines.append(ln)
+        elif caption_lines:
+            # continuation line after a caption start
+            caption_lines.append(ln)
+    return "\n".join(caption_lines)
 
 
 def _extract_page_text(page: pdfium.PdfPage) -> str:
-    """Return the text layer of a PDF page, or '' on any error."""
+    """Return structured body text for a native-text PDF page.
+
+    Uses pypdfium2's bounded-rectangle extraction to strip the repeating
+    journal running-header (top 6 %) and page-number footer (bottom 7 %).
+    Figure captions found in the footer band are preserved and appended after
+    the body.  All remaining soft-hyphen and column-break artefacts are then
+    cleaned by _clean_pdf_text.
+    """
     try:
         tp = page.get_textpage()
-        raw = tp.get_text_range() or ""
-        return _clean_pdf_text(raw)
+        w, h = page.get_size()
+
+        bot_cut = h * 0.07   # footer zone upper bound
+        top_cut = h * 0.94   # header zone lower bound
+
+        body_raw  = tp.get_text_bounded(0, bot_cut, w, top_cut) or ""
+        footer_raw = tp.get_text_bounded(0, 0,       w, bot_cut) or ""
+
+        body = _clean_pdf_text(body_raw)
+        captions = _extract_figure_captions(footer_raw)
+        if captions:
+            body = body + "\n\n" + captions
+        return body
     except Exception:
-        return ""
+        try:
+            return _clean_pdf_text(page.get_textpage().get_text_range() or "")
+        except Exception:
+            return ""
 
 
 def _is_usable_text(text: str, min_len: int = 50, min_alpha_ratio: float = 0.4) -> bool:
