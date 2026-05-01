@@ -150,19 +150,26 @@ EMBEDDING_MODEL=qwen3-embedding:4b
 
 Ollama embedding models are routed through `OLLAMA_BASE_URL/v1/embeddings` automatically — no extra config needed. For sentence-transformers: `pip install sentence-transformers`. If neither is available, search degrades to FTS5-only.
 
-**PDF extraction quality:**
+**PDF extraction — pick a profile:**
 
-```bash
-USE_PYMUPDF4LLM=true              # structured markdown extraction for native-text PDFs (default)
-```
+Choose the block that matches your hardware in `local.env` (see `local.env.example` for full details):
 
-When enabled, native-text PDFs are converted to heading-aware markdown with:
-- `#` / `##` headings detected from font sizes
-- Abstract and ARTICLE INFO rendered as markdown tables
-- Bold figure captions (`**Fig. 1.**`), italic section headings
-- Running journal headers and page-number footers stripped automatically
+| Profile | Settings | Best for | Speed |
+|---------|----------|----------|-------|
+| **A — instant / CPU-only** | `USE_PDFTEXT=true` | GPU fully used by Ollama, or no GPU | Instant (no models) |
+| **B — high-quality / shared GPU** | `USE_MARKER_PDF=true` `MARKER_DEVICE=cpu` | Ollama running, want structured output | ~30-60 s first PDF |
+| **C — high-quality / dedicated GPU** | `USE_MARKER_PDF=true` `MARKER_DEVICE=cuda` | Spare VRAM ≥ 4 GB, Ollama not loaded | ~10-15 s first PDF |
 
-Scanned or handwritten PDFs automatically fall back to the vision model (glm-ocr / llava). Set `USE_PYMUPDF4LLM=false` to always use the vision model.
+The extraction stack tries each layer in order; the first success wins per page:
+
+1. **pdftext** (`USE_PDFTEXT`) — reads the native PDF text layer with zero ML; instant for digital PDFs
+2. **marker-pdf** (`USE_MARKER_PDF`) — layout-aware markdown via Surya models; correct column order, tables, headings
+3. **pymupdf4llm** (`USE_PYMUPDF4LLM`) — structured markdown from the native text layer; good quality, no model load
+4. **pypdfium2** — plain text fallback; always available
+5. **Surya OCR** (`USE_SURYA_OCR`) — direct detection + recognition (2 models) for scanned pages; lighter than full marker
+6. **Vision model** — Ollama / LM Studio OCR as last resort for scanned pages
+
+The default (`local.env.example` baseline) uses **pymupdf4llm** — no model downloads required, works on any hardware.
 
 **Monitoring and error recovery:**
 
@@ -764,10 +771,13 @@ ocr_kb/
   prompts.py           LLM prompt templates (OCR, figure description, RAG, wiki)
   ingest/
     loader.py              file-type detection and routing
+    batch_builder.py       batching for multi-page docs; runs extraction priority chain per page
     pdf_reader.py          PDF → page images + native text (pypdfium2); strips headers/footers
+    pdftext_reader.py      zero-ML native text extraction via pdftext (instant for digital PDFs)
     pymupdf4llm_reader.py  structured markdown extraction for native-text PDFs (pymupdf4llm)
+    marker_reader.py       layout-aware markdown via full marker-pdf pipeline (5 Surya models)
+    surya_reader.py        direct Surya OCR — detection + recognition only (2 models, lighter)
     image_reader.py        image loading and pre-processing
-    batch_builder.py       batching for multi-page docs; selects text vs OCR path per page
   model/
     glm_ocr_backend.py vision model client — routes to Ollama or LM Studio
     gemma_backend.py   text model client — routes to Ollama or LM Studio
@@ -820,9 +830,11 @@ Pull the model first: `ollama pull llava:7b`. Use `ocr-kb models` to see what's
 available and what's currently configured.
 
 **Out of memory / CUDA OOM during ingest**
-Lower `MAX_IMAGE_PIXELS` (e.g. `921600` for 1280×720) and/or `MODEL_MAX_NEW_TOKENS=1024`.
-For embedded image extraction, set `EMBEDDED_IMAGE_MIN_PIXELS=40000` to skip smaller
-figures, or disable entirely with `EXTRACT_EMBEDDED_IMAGES=false`.
+If marker-pdf or Surya OOMs while Ollama is loaded, set `MARKER_DEVICE=cpu` — marker runs
+on CPU and leaves the GPU entirely for Ollama (Profile B in `local.env.example`).
+For vision-model OOM, lower `MAX_IMAGE_PIXELS` (e.g. `921600` for 1280×720) and/or
+`MODEL_MAX_NEW_TOKENS=1024`. To skip embedded image extraction, set
+`EMBEDDED_IMAGE_MIN_PIXELS=40000` or `EXTRACT_EMBEDDED_IMAGES=false`.
 
 **No results found when searching**
 FTS5 uses exact token matching — `"transformer"` won't match `"transformers"`.

@@ -88,6 +88,22 @@ class Settings(BaseSettings):
     # back to vision-model OCR when the extracted text looks like a scan
     # (empty, very short, or mostly non-alphabetic characters).
     prefer_pdf_text: bool = True
+    # Use pdftext for zero-ML native text extraction (instant on digital PDFs).
+    # Reads the PDF text layer directly — no models loaded.  Scanned pages
+    # return short/empty strings and are routed to OCR automatically.
+    use_pdftext: bool = True
+    # Use Surya OCR directly: only loads DetectionPredictor + RecognitionPredictor
+    # (2 models) instead of the full marker pipeline (5 models + processors).
+    # Best for scanned PDFs when you want ML OCR without the full marker overhead.
+    use_surya_ocr: bool = False
+    # Use marker-pdf for high-quality layout-aware markdown extraction.
+    # Runs Surya neural models (layout + OCR) — first call loads models (~10-30 s).
+    # When True, marker-pdf is tried before pymupdf4llm and pypdfium2.
+    use_marker_pdf: bool = False
+    # Device for marker-pdf / Surya models.  Defaults to "cpu" so they don't
+    # compete with Ollama/LM Studio for VRAM.  Set to "cuda" only when those
+    # backends are not running or you have spare VRAM.
+    marker_device: str = "cpu"
     # Use pymupdf4llm for structured markdown extraction on native-text PDFs.
     # Produces proper heading hierarchy, bold/italic, and table markdown.
     # Falls back to raw pypdfium2 text when pymupdf4llm is not installed.
