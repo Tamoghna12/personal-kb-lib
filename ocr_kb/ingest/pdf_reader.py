@@ -78,11 +78,28 @@ def _render_page(page: pdfium.PdfPage, dpi: int) -> Image.Image:
     return bitmap.to_pil()
 
 
+def _clean_pdf_text(text: str) -> str:
+    """Fix PDF soft-hyphen artifacts produced by pypdfium2.
+
+    pypdfium2 maps the PDF soft-hyphen (SHY, U+00AD) to U+FFFE, yielding
+    fragments like 'imple￾ment' instead of 'implement'.  However when both
+    sides are all-caps (e.g. 'NIR￾SRS') the hyphen is a real delimiter, not
+    a line-break, so it is preserved as '-'.  U+00AD is always removed.
+    """
+    import re
+    # All-caps on both sides → real abbreviation hyphen (e.g. NIR-SRS)
+    text = re.sub(r"([A-Z]+)￾([A-Z]+)", r"\1-\2", text)
+    # Remaining ￾ (and actual soft hyphens) are line-break artifacts → remove
+    text = re.sub(r"[­￾]", "", text)
+    return text
+
+
 def _extract_page_text(page: pdfium.PdfPage) -> str:
     """Return the text layer of a PDF page, or '' on any error."""
     try:
         tp = page.get_textpage()
-        return tp.get_text_range() or ""
+        raw = tp.get_text_range() or ""
+        return _clean_pdf_text(raw)
     except Exception:
         return ""
 
