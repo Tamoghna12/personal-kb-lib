@@ -88,6 +88,10 @@ class Settings(BaseSettings):
     # back to vision-model OCR when the extracted text looks like a scan
     # (empty, very short, or mostly non-alphabetic characters).
     prefer_pdf_text: bool = True
+    # Use pymupdf4llm for structured markdown extraction on native-text PDFs.
+    # Produces proper heading hierarchy, bold/italic, and table markdown.
+    # Falls back to raw pypdfium2 text when pymupdf4llm is not installed.
+    use_pymupdf4llm: bool = True
 
     # ── Sub-page chunking ────────────────────────────────────────────────────
     # Split each page into overlapping chunks for more precise retrieval.

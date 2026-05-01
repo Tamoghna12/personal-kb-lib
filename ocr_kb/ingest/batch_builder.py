@@ -43,19 +43,55 @@ def build_batch(
         )]
 
     if is_pdf(path) and settings.prefer_pdf_text:
-        from ocr_kb.ingest.pdf_reader import render_pdf_pages_smart
-        pages = render_pdf_pages_smart(
-            path, settings.image_dpi, settings.min_pdf_image_dim, page_range
-        )
-        items = [
-            BatchItem(
-                source_path=path,
-                page_number=page_num,
-                image=content if not isinstance(content, str) else None,
-                text_content=content if isinstance(content, str) else None,
+        # Try structured markdown extraction first (pymupdf4llm).
+        # Falls back to pypdfium2 raw text when not installed or on failure.
+        md_pages: list[tuple[int, str]] | None = None
+        if settings.use_pymupdf4llm:
+            from ocr_kb.ingest.pymupdf4llm_reader import (
+                is_text_page,
+                pdf_to_markdown_pages,
             )
-            for page_num, content in pages
-        ]
+            md_pages = pdf_to_markdown_pages(path)
+
+        if md_pages is not None:
+            from ocr_kb.ingest.pdf_reader import render_pdf_pages_smart
+            from ocr_kb.ingest.pymupdf4llm_reader import is_text_page
+
+            # Filter page range if specified
+            if page_range:
+                from ocr_kb.ingest.pdf_reader import parse_page_range
+                import fitz
+                doc = fitz.open(str(path))
+                allowed = set(i + 1 for i in parse_page_range(page_range, len(doc)))
+                doc.close()
+                md_pages = [(pn, t) for pn, t in md_pages if pn in allowed]
+
+            items = []
+            scanned_pages = {pn for pn, t in md_pages if not is_text_page(t)}
+            for page_num, text in md_pages:
+                if page_num in scanned_pages:
+                    # Page looks like a scan — render for OCR instead
+                    items.append(BatchItem(source_path=path, page_number=page_num, image=None))
+                else:
+                    items.append(BatchItem(
+                        source_path=path,
+                        page_number=page_num,
+                        text_content=text,
+                    ))
+        else:
+            from ocr_kb.ingest.pdf_reader import render_pdf_pages_smart
+            pages = render_pdf_pages_smart(
+                path, settings.image_dpi, settings.min_pdf_image_dim, page_range
+            )
+            items = [
+                BatchItem(
+                    source_path=path,
+                    page_number=page_num,
+                    image=content if not isinstance(content, str) else None,
+                    text_content=content if isinstance(content, str) else None,
+                )
+                for page_num, content in pages
+            ]
     else:
         items = [
             BatchItem(source_path=path, page_number=page_num, image=img)
