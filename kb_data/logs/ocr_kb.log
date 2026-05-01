@@ -1,0 +1,169 @@
+2026-05-01T09:53:18 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-0/test_ingest_text_file_exits_ok0/note.txt | pages_saved=1 | status=ok | elapsed=2.90s
+2026-05-01T09:53:18 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-0/test_ingest_text_file_saves_en0/note.txt | pages_saved=1 | status=ok | elapsed=0.00s
+2026-05-01T09:53:18 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-0/test_ingest_applies_tags0/note.txt | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:53:18 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-0/test_ingest_applies_category0/note.txt | pages_saved=1 | status=ok | elapsed=0.00s
+2026-05-01T09:53:18 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-0/test_ingest_directory_processe0/a.txt | pages_saved=1 | status=ok | elapsed=0.00s
+2026-05-01T09:53:18 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-0/test_ingest_directory_processe0/b.txt | pages_saved=1 | status=ok | elapsed=0.00s
+2026-05-01T09:53:18 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-0/test_ingest_blank_page_skipped0/note.txt | pages_saved=0 | status=ok | elapsed=0.00s
+2026-05-01T09:53:18 | INFO | ocr_kb.monitoring | ingest | source=file.txt | pages_saved=1 | status=ok | elapsed=0.00s
+2026-05-01T09:53:18 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-0/test_ingest_html_mode_stores_h0/doc.pdf | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:53:18 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-0/test_ingest_output_mentions_sa0/note.txt | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:53:18 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-0/test_ingest_errors_shown_in_ou0/bad.pdf | pages_saved=0 | status=1 error(s) | elapsed=0.00s
+2026-05-01T09:53:18 | WARNING | ocr_kb.monitoring | ingest_error | source=/tmp/pytest-of-cgtd/pytest-0/test_ingest_errors_shown_in_ou0/bad.pdf | Page 1: model offline
+2026-05-01T09:53:18 | WARNING | ocr_kb.monitoring | dlq_push | source=/tmp/pytest-of-cgtd/pytest-0/test_ingest_errors_shown_in_ou0/bad.pdf | retry_count=0 | error=Page 1: model offline
+2026-05-01T09:53:18 | DEBUG | ocr_kb.indexer | hybrid_search | query='xyzzy_not_found' | final=0 | elapsed=2.9ms
+2026-05-01T09:53:18 | DEBUG | ocr_kb.monitoring | search | query='xyzzy_not_found' | results=0 | elapsed=3.1ms
+2026-05-01T09:53:18 | DEBUG | ocr_kb.indexer | hybrid_search | query='quantum' | final=1 | elapsed=2.6ms
+2026-05-01T09:53:18 | DEBUG | ocr_kb.monitoring | search | query='quantum' | results=1 | elapsed=2.6ms
+2026-05-01T09:53:18 | DEBUG | ocr_kb.indexer | hybrid_search | query='common' | final=2 | elapsed=3.2ms
+2026-05-01T09:53:18 | DEBUG | ocr_kb.monitoring | search | query='common' | results=2 | elapsed=3.3ms
+2026-05-01T09:53:19 | DEBUG | ocr_kb.indexer | hybrid_search | query='quantum teleportation' | final=0 | elapsed=2.8ms
+2026-05-01T09:53:19 | DEBUG | ocr_kb.monitoring | search | query='quantum teleportation' | results=0 | elapsed=2.9ms
+2026-05-01T09:53:19 | DEBUG | ocr_kb.indexer | hybrid_search | query='backpropagation' | final=1 | elapsed=2.8ms
+2026-05-01T09:53:19 | DEBUG | ocr_kb.monitoring | search | query='backpropagation' | results=1 | elapsed=2.9ms
+2026-05-01T09:53:19 | DEBUG | ocr_kb.indexer | hybrid_search | query='deep learning' | final=1 | elapsed=3.0ms
+2026-05-01T09:53:19 | DEBUG | ocr_kb.monitoring | search | query='deep learning' | results=1 | elapsed=3.1ms
+2026-05-01T09:53:19 | DEBUG | ocr_kb.indexer | hybrid_search | query='neural nets' | final=2 | elapsed=2.6ms
+2026-05-01T09:53:19 | DEBUG | ocr_kb.monitoring | search | query='neural nets' | results=2 | elapsed=2.7ms
+2026-05-01T09:53:19 | DEBUG | ocr_kb.monitoring | search | query='quantum' | results=1 | elapsed=0.2ms
+2026-05-01T09:53:19 | DEBUG | ocr_kb.monitoring | search | query='deep learning' | results=1 | elapsed=0.2ms
+2026-05-01T09:53:19 | DEBUG | ocr_kb.indexer | hybrid_search | query='backpropagation' | final=1 | elapsed=4.4ms
+2026-05-01T09:53:19 | DEBUG | ocr_kb.monitoring | search | query='backpropagation' | results=1 | elapsed=4.5ms
+2026-05-01T09:53:19 | DEBUG | ocr_kb.indexer | hybrid_search | query='backprop' | final=1 | elapsed=3.2ms
+2026-05-01T09:53:19 | DEBUG | ocr_kb.monitoring | search | query='backprop' | results=1 | elapsed=3.3ms
+2026-05-01T09:53:21 | DEBUG | ocr_kb.indexer | hybrid_search | query='gradient' | final=1 | elapsed=0.2ms
+2026-05-01T09:53:21 | DEBUG | ocr_kb.indexer | hybrid_search | query='xyzzy999' | final=0 | elapsed=0.1ms
+2026-05-01T09:53:21 | DEBUG | ocr_kb.indexer | hybrid_search | query='common word' | final=3 | elapsed=0.2ms
+2026-05-01T09:53:21 | DEBUG | ocr_kb.indexer | hybrid_search | query='neural nets' | final=2 | elapsed=0.2ms
+2026-05-01T09:54:22 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-2/test_ingest_text_file_exits_ok0/note.txt | pages_saved=1 | status=ok | elapsed=2.64s
+2026-05-01T09:54:22 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-2/test_ingest_text_file_saves_en0/note.txt | pages_saved=1 | status=ok | elapsed=0.00s
+2026-05-01T09:54:22 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-2/test_ingest_applies_tags0/note.txt | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:54:22 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-2/test_ingest_applies_category0/note.txt | pages_saved=1 | status=ok | elapsed=0.00s
+2026-05-01T09:54:22 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-2/test_ingest_directory_processe0/a.txt | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:54:22 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-2/test_ingest_directory_processe0/b.txt | pages_saved=1 | status=ok | elapsed=0.00s
+2026-05-01T09:54:22 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-2/test_ingest_blank_page_skipped0/note.txt | pages_saved=0 | status=ok | elapsed=0.00s
+2026-05-01T09:54:22 | INFO | ocr_kb.monitoring | ingest | source=file.txt | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:54:22 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-2/test_ingest_html_mode_stores_h0/doc.pdf | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:54:22 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-2/test_ingest_output_mentions_sa0/note.txt | pages_saved=1 | status=ok | elapsed=0.00s
+2026-05-01T09:54:22 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-2/test_ingest_errors_shown_in_ou0/bad.pdf | pages_saved=0 | status=1 error(s) | elapsed=0.00s
+2026-05-01T09:54:22 | WARNING | ocr_kb.monitoring | ingest_error | source=/tmp/pytest-of-cgtd/pytest-2/test_ingest_errors_shown_in_ou0/bad.pdf | Page 1: model offline
+2026-05-01T09:54:22 | WARNING | ocr_kb.monitoring | dlq_push | source=/tmp/pytest-of-cgtd/pytest-2/test_ingest_errors_shown_in_ou0/bad.pdf | retry_count=0 | error=Page 1: model offline
+2026-05-01T09:54:22 | DEBUG | ocr_kb.indexer | hybrid_search | query='xyzzy_not_found' | final=0 | elapsed=2.9ms
+2026-05-01T09:54:22 | DEBUG | ocr_kb.monitoring | search | query='xyzzy_not_found' | results=0 | elapsed=3.0ms
+2026-05-01T09:54:22 | DEBUG | ocr_kb.indexer | hybrid_search | query='quantum' | final=1 | elapsed=3.0ms
+2026-05-01T09:54:22 | DEBUG | ocr_kb.monitoring | search | query='quantum' | results=1 | elapsed=3.1ms
+2026-05-01T09:54:22 | DEBUG | ocr_kb.indexer | hybrid_search | query='common' | final=2 | elapsed=2.4ms
+2026-05-01T09:54:22 | DEBUG | ocr_kb.monitoring | search | query='common' | results=2 | elapsed=2.5ms
+2026-05-01T09:54:23 | DEBUG | ocr_kb.indexer | hybrid_search | query='quantum teleportation' | final=0 | elapsed=2.8ms
+2026-05-01T09:54:23 | DEBUG | ocr_kb.monitoring | search | query='quantum teleportation' | results=0 | elapsed=2.9ms
+2026-05-01T09:54:23 | DEBUG | ocr_kb.indexer | hybrid_search | query='backpropagation' | final=1 | elapsed=3.0ms
+2026-05-01T09:54:23 | DEBUG | ocr_kb.monitoring | search | query='backpropagation' | results=1 | elapsed=3.1ms
+2026-05-01T09:54:23 | DEBUG | ocr_kb.indexer | hybrid_search | query='deep learning' | final=1 | elapsed=2.2ms
+2026-05-01T09:54:23 | DEBUG | ocr_kb.monitoring | search | query='deep learning' | results=1 | elapsed=2.3ms
+2026-05-01T09:54:23 | DEBUG | ocr_kb.indexer | hybrid_search | query='neural nets' | final=2 | elapsed=2.4ms
+2026-05-01T09:54:23 | DEBUG | ocr_kb.monitoring | search | query='neural nets' | results=2 | elapsed=2.5ms
+2026-05-01T09:54:23 | DEBUG | ocr_kb.monitoring | search | query='quantum' | results=1 | elapsed=0.1ms
+2026-05-01T09:54:23 | DEBUG | ocr_kb.monitoring | search | query='deep learning' | results=1 | elapsed=0.2ms
+2026-05-01T09:54:23 | DEBUG | ocr_kb.indexer | hybrid_search | query='backpropagation' | final=1 | elapsed=2.8ms
+2026-05-01T09:54:23 | DEBUG | ocr_kb.monitoring | search | query='backpropagation' | results=1 | elapsed=2.9ms
+2026-05-01T09:54:23 | DEBUG | ocr_kb.indexer | hybrid_search | query='backprop' | final=1 | elapsed=2.7ms
+2026-05-01T09:54:23 | DEBUG | ocr_kb.monitoring | search | query='backprop' | results=1 | elapsed=2.8ms
+2026-05-01T09:54:24 | DEBUG | ocr_kb.indexer | hybrid_search | query='gradient' | final=1 | elapsed=0.1ms
+2026-05-01T09:54:25 | DEBUG | ocr_kb.indexer | hybrid_search | query='xyzzy999' | final=0 | elapsed=0.1ms
+2026-05-01T09:54:25 | DEBUG | ocr_kb.indexer | hybrid_search | query='common word' | final=3 | elapsed=0.2ms
+2026-05-01T09:54:25 | DEBUG | ocr_kb.indexer | hybrid_search | query='neural nets' | final=2 | elapsed=0.2ms
+2026-05-01T09:54:25 | INFO | ocr_kb.test | hello test message
+2026-05-01T09:54:25 | INFO | ocr_kb.monitoring | ingest | source=/data/doc.pdf | pages_saved=3 | status=ok | elapsed=1.23s
+2026-05-01T09:54:25 | INFO | ocr_kb.monitoring | ingest | source=/data/doc.pdf | pages_saved=0 | status=1 error(s) | elapsed=0.50s
+2026-05-01T09:54:25 | WARNING | ocr_kb.monitoring | ingest_error | source=/data/doc.pdf | Page 1: timeout
+2026-05-01T09:54:25 | DEBUG | ocr_kb.monitoring | search | query='neural nets' | results=5 | elapsed=12.3ms
+2026-05-01T09:54:25 | WARNING | ocr_kb.monitoring | dlq_push | source=/data/bad.pdf | retry_count=2 | error=connection refused
+2026-05-01T09:54:41 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-3/test_ingest_text_file_exits_ok0/note.txt | pages_saved=1 | status=ok | elapsed=2.73s
+2026-05-01T09:54:41 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-3/test_ingest_text_file_saves_en0/note.txt | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:54:41 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-3/test_ingest_applies_tags0/note.txt | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:54:41 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-3/test_ingest_applies_category0/note.txt | pages_saved=1 | status=ok | elapsed=0.00s
+2026-05-01T09:54:41 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-3/test_ingest_directory_processe0/a.txt | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:54:41 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-3/test_ingest_directory_processe0/b.txt | pages_saved=1 | status=ok | elapsed=0.00s
+2026-05-01T09:54:41 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-3/test_ingest_blank_page_skipped0/note.txt | pages_saved=0 | status=ok | elapsed=0.00s
+2026-05-01T09:54:41 | INFO | ocr_kb.monitoring | ingest | source=file.txt | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:54:41 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-3/test_ingest_html_mode_stores_h0/doc.pdf | pages_saved=1 | status=ok | elapsed=0.00s
+2026-05-01T09:54:41 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-3/test_ingest_output_mentions_sa0/note.txt | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:54:41 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-3/test_ingest_errors_shown_in_ou0/bad.pdf | pages_saved=0 | status=1 error(s) | elapsed=0.00s
+2026-05-01T09:54:41 | WARNING | ocr_kb.monitoring | ingest_error | source=/tmp/pytest-of-cgtd/pytest-3/test_ingest_errors_shown_in_ou0/bad.pdf | Page 1: model offline
+2026-05-01T09:54:41 | WARNING | ocr_kb.monitoring | dlq_push | source=/tmp/pytest-of-cgtd/pytest-3/test_ingest_errors_shown_in_ou0/bad.pdf | retry_count=0 | error=Page 1: model offline
+2026-05-01T09:54:42 | DEBUG | ocr_kb.indexer | hybrid_search | query='xyzzy_not_found' | final=0 | elapsed=2.9ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.monitoring | search | query='xyzzy_not_found' | results=0 | elapsed=3.0ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.indexer | hybrid_search | query='quantum' | final=1 | elapsed=2.9ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.monitoring | search | query='quantum' | results=1 | elapsed=3.0ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.indexer | hybrid_search | query='common' | final=2 | elapsed=2.8ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.monitoring | search | query='common' | results=2 | elapsed=2.9ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.indexer | hybrid_search | query='quantum teleportation' | final=0 | elapsed=3.2ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.monitoring | search | query='quantum teleportation' | results=0 | elapsed=3.3ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.indexer | hybrid_search | query='backpropagation' | final=1 | elapsed=2.5ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.monitoring | search | query='backpropagation' | results=1 | elapsed=2.6ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.indexer | hybrid_search | query='deep learning' | final=1 | elapsed=2.6ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.monitoring | search | query='deep learning' | results=1 | elapsed=2.7ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.indexer | hybrid_search | query='neural nets' | final=2 | elapsed=3.0ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.monitoring | search | query='neural nets' | results=2 | elapsed=3.1ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.monitoring | search | query='quantum' | results=1 | elapsed=0.1ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.monitoring | search | query='deep learning' | results=1 | elapsed=0.3ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.indexer | hybrid_search | query='backpropagation' | final=1 | elapsed=3.1ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.monitoring | search | query='backpropagation' | results=1 | elapsed=3.2ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.indexer | hybrid_search | query='backprop' | final=1 | elapsed=3.8ms
+2026-05-01T09:54:42 | DEBUG | ocr_kb.monitoring | search | query='backprop' | results=1 | elapsed=3.9ms
+2026-05-01T09:54:44 | DEBUG | ocr_kb.indexer | hybrid_search | query='gradient' | final=1 | elapsed=0.1ms
+2026-05-01T09:54:44 | DEBUG | ocr_kb.indexer | hybrid_search | query='xyzzy999' | final=0 | elapsed=0.1ms
+2026-05-01T09:54:44 | DEBUG | ocr_kb.indexer | hybrid_search | query='common word' | final=3 | elapsed=0.2ms
+2026-05-01T09:54:44 | DEBUG | ocr_kb.indexer | hybrid_search | query='neural nets' | final=2 | elapsed=0.2ms
+2026-05-01T09:54:44 | INFO | ocr_kb.test | hello test message
+2026-05-01T09:54:44 | INFO | ocr_kb.monitoring | ingest | source=/data/doc.pdf | pages_saved=3 | status=ok | elapsed=1.23s
+2026-05-01T09:54:44 | INFO | ocr_kb.monitoring | ingest | source=/data/doc.pdf | pages_saved=0 | status=1 error(s) | elapsed=0.50s
+2026-05-01T09:54:44 | WARNING | ocr_kb.monitoring | ingest_error | source=/data/doc.pdf | Page 1: timeout
+2026-05-01T09:54:44 | DEBUG | ocr_kb.monitoring | search | query='neural nets' | results=5 | elapsed=12.3ms
+2026-05-01T09:54:44 | WARNING | ocr_kb.monitoring | dlq_push | source=/data/bad.pdf | retry_count=2 | error=connection refused
+2026-05-01T09:57:56 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-4/test_ingest_text_file_exits_ok0/note.txt | pages_saved=1 | status=ok | elapsed=2.69s
+2026-05-01T09:57:56 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-4/test_ingest_text_file_saves_en0/note.txt | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:57:56 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-4/test_ingest_applies_tags0/note.txt | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:57:56 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-4/test_ingest_applies_category0/note.txt | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:57:56 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-4/test_ingest_directory_processe0/a.txt | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:57:56 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-4/test_ingest_directory_processe0/b.txt | pages_saved=1 | status=ok | elapsed=0.00s
+2026-05-01T09:57:56 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-4/test_ingest_blank_page_skipped0/note.txt | pages_saved=0 | status=ok | elapsed=0.00s
+2026-05-01T09:57:56 | INFO | ocr_kb.monitoring | ingest | source=file.txt | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:57:56 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-4/test_ingest_html_mode_stores_h0/doc.pdf | pages_saved=1 | status=ok | elapsed=0.00s
+2026-05-01T09:57:56 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-4/test_ingest_output_mentions_sa0/note.txt | pages_saved=1 | status=ok | elapsed=0.01s
+2026-05-01T09:57:56 | INFO | ocr_kb.monitoring | ingest | source=/tmp/pytest-of-cgtd/pytest-4/test_ingest_errors_shown_in_ou0/bad.pdf | pages_saved=0 | status=1 error(s) | elapsed=0.00s
+2026-05-01T09:57:56 | WARNING | ocr_kb.monitoring | ingest_error | source=/tmp/pytest-of-cgtd/pytest-4/test_ingest_errors_shown_in_ou0/bad.pdf | Page 1: model offline
+2026-05-01T09:57:56 | WARNING | ocr_kb.monitoring | dlq_push | source=/tmp/pytest-of-cgtd/pytest-4/test_ingest_errors_shown_in_ou0/bad.pdf | retry_count=0 | error=Page 1: model offline
+2026-05-01T09:57:56 | DEBUG | ocr_kb.indexer | hybrid_search | query='xyzzy_not_found' | final=0 | elapsed=2.8ms
+2026-05-01T09:57:56 | DEBUG | ocr_kb.monitoring | search | query='xyzzy_not_found' | results=0 | elapsed=2.9ms
+2026-05-01T09:57:56 | DEBUG | ocr_kb.indexer | hybrid_search | query='quantum' | final=1 | elapsed=3.0ms
+2026-05-01T09:57:56 | DEBUG | ocr_kb.monitoring | search | query='quantum' | results=1 | elapsed=3.1ms
+2026-05-01T09:57:56 | DEBUG | ocr_kb.indexer | hybrid_search | query='common' | final=2 | elapsed=2.4ms
+2026-05-01T09:57:56 | DEBUG | ocr_kb.monitoring | search | query='common' | results=2 | elapsed=2.5ms
+2026-05-01T09:57:56 | DEBUG | ocr_kb.indexer | hybrid_search | query='quantum teleportation' | final=0 | elapsed=2.7ms
+2026-05-01T09:57:56 | DEBUG | ocr_kb.monitoring | search | query='quantum teleportation' | results=0 | elapsed=2.8ms
+2026-05-01T09:57:56 | DEBUG | ocr_kb.indexer | hybrid_search | query='backpropagation' | final=1 | elapsed=2.9ms
+2026-05-01T09:57:56 | DEBUG | ocr_kb.monitoring | search | query='backpropagation' | results=1 | elapsed=3.0ms
+2026-05-01T09:57:56 | DEBUG | ocr_kb.indexer | hybrid_search | query='deep learning' | final=1 | elapsed=2.8ms
+2026-05-01T09:57:56 | DEBUG | ocr_kb.monitoring | search | query='deep learning' | results=1 | elapsed=2.9ms
+2026-05-01T09:57:56 | DEBUG | ocr_kb.indexer | hybrid_search | query='neural nets' | final=2 | elapsed=2.8ms
+2026-05-01T09:57:56 | DEBUG | ocr_kb.monitoring | search | query='neural nets' | results=2 | elapsed=2.9ms
+2026-05-01T09:57:57 | DEBUG | ocr_kb.monitoring | search | query='quantum' | results=1 | elapsed=0.2ms
+2026-05-01T09:57:57 | DEBUG | ocr_kb.monitoring | search | query='deep learning' | results=1 | elapsed=0.2ms
+2026-05-01T09:57:57 | DEBUG | ocr_kb.indexer | hybrid_search | query='backpropagation' | final=1 | elapsed=2.8ms
+2026-05-01T09:57:57 | DEBUG | ocr_kb.monitoring | search | query='backpropagation' | results=1 | elapsed=2.9ms
+2026-05-01T09:57:57 | DEBUG | ocr_kb.indexer | hybrid_search | query='backprop' | final=1 | elapsed=2.4ms
+2026-05-01T09:57:57 | DEBUG | ocr_kb.monitoring | search | query='backprop' | results=1 | elapsed=2.5ms
+2026-05-01T09:57:58 | DEBUG | ocr_kb.indexer | hybrid_search | query='gradient' | final=1 | elapsed=0.1ms
+2026-05-01T09:57:58 | DEBUG | ocr_kb.indexer | hybrid_search | query='xyzzy999' | final=0 | elapsed=0.1ms
+2026-05-01T09:57:58 | DEBUG | ocr_kb.indexer | hybrid_search | query='common word' | final=3 | elapsed=0.2ms
+2026-05-01T09:57:58 | DEBUG | ocr_kb.indexer | hybrid_search | query='neural nets' | final=2 | elapsed=0.2ms
+2026-05-01T09:57:59 | INFO | ocr_kb.test | hello test message
+2026-05-01T09:57:59 | INFO | ocr_kb.monitoring | ingest | source=/data/doc.pdf | pages_saved=3 | status=ok | elapsed=1.23s
+2026-05-01T09:57:59 | INFO | ocr_kb.monitoring | ingest | source=/data/doc.pdf | pages_saved=0 | status=1 error(s) | elapsed=0.50s
+2026-05-01T09:57:59 | WARNING | ocr_kb.monitoring | ingest_error | source=/data/doc.pdf | Page 1: timeout
+2026-05-01T09:57:59 | DEBUG | ocr_kb.monitoring | search | query='neural nets' | results=5 | elapsed=12.3ms
+2026-05-01T09:57:59 | WARNING | ocr_kb.monitoring | dlq_push | source=/data/bad.pdf | retry_count=2 | error=connection refused
+2026-05-01T09:58:19 | INFO | ocr_kb.monitoring | ingest | source=data/inputs/deep_learning.pdf | pages_saved=16 | status=ok | elapsed=2.68s
+2026-05-01T09:58:34 | DEBUG | ocr_kb.indexer | hybrid_search | query='neural networks' | final=10 | elapsed=4872.6ms
+2026-05-01T09:58:34 | DEBUG | ocr_kb.monitoring | search | query='neural networks' | results=10 | elapsed=4872.8ms

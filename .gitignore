@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg-link
+
+# Virtual envs
+.venv/
+venv/
+env/
+.env
+
+# Local config (keep the example, ignore the real one)
+local.env
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Project runtime data
+kb_data/*.db
+kb_data/extracted_images/
+!kb_data/.gitkeep
+
+# Inputs / samples (tracked manually)
+data/inputs/*
+data/samples/*
+!data/inputs/.gitkeep
+!data/samples/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*~

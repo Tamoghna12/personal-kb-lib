@@ -1,0 +1,65 @@
+{
+  "_comment": "Copy the block that matches your coding agent. Replace /path/to/venv with your virtualenv path.",
+
+  "claude_code": {
+    "_doc": "Add this to ~/.claude/claude_desktop_config.json (or ~/.claude/mcp.json for Claude Code CLI)",
+    "mcpServers": {
+      "ocr-kb": {
+        "command": "/path/to/venv/bin/ocr-kb-mcp",
+        "args": [],
+        "env": {
+          "OCR_KB_DB_PATH": "/path/to/your/kb.db",
+          "LM_STUDIO_BASE_URL": "http://localhost:1234/v1",
+          "VISION_MODEL": "gemma-3-4b-it",
+          "TEXT_MODEL": "gemma-3-4b-it",
+          "MAX_IMAGE_PIXELS": "1310720",
+          "MODEL_MAX_NEW_TOKENS": "2048",
+          "RAG_CHUNK_CHARS": "600"
+        }
+      }
+    }
+  },
+
+  "cursor": {
+    "_doc": "Add the 'ocr-kb' block to .cursor/mcp.json in your project root",
+    "mcpServers": {
+      "ocr-kb": {
+        "command": "/path/to/venv/bin/ocr-kb-mcp",
+        "args": [],
+        "env": {
+          "OCR_KB_DB_PATH": "/path/to/your/kb.db",
+          "LM_STUDIO_BASE_URL": "http://localhost:1234/v1",
+          "VISION_MODEL": "gemma-3-4b-it",
+          "TEXT_MODEL": "gemma-3-4b-it",
+          "MAX_IMAGE_PIXELS": "1310720",
+          "MODEL_MAX_NEW_TOKENS": "2048",
+          "RAG_CHUNK_CHARS": "600"
+        }
+      }
+    }
+  },
+
+  "opencode": {
+    "_doc": "Add to opencode.json in your project root (OpenCode tool.exec format)",
+    "tools": {
+      "ocr-kb": {
+        "exec": ["/path/to/venv/bin/ocr-kb-mcp"],
+        "env": {
+          "OCR_KB_DB_PATH": "/path/to/your/kb.db",
+          "LM_STUDIO_BASE_URL": "http://localhost:1234/v1",
+          "VISION_MODEL": "gemma-3-4b-it",
+          "TEXT_MODEL": "gemma-3-4b-it",
+          "MAX_IMAGE_PIXELS": "1310720",
+          "MODEL_MAX_NEW_TOKENS": "2048",
+          "RAG_CHUNK_CHARS": "600"
+        }
+      }
+    }
+  },
+
+  "sse_mode": {
+    "_doc": "Run with --transport sse for web-based agents that need an HTTP endpoint",
+    "command": "/path/to/venv/bin/ocr-kb-mcp --transport sse",
+    "default_port": 8000
+  }
+}
