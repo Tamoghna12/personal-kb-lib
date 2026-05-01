@@ -59,6 +59,12 @@ def build_batch(
             from ocr_kb.ingest.pdftext_reader import pdf_to_text_pdftext
             md_pages = pdf_to_text_pdftext(path, page_range=_zero_range)
 
+        if md_pages is None and settings.use_docling:
+            from ocr_kb.ingest.docling_reader import pdf_to_markdown_docling
+            md_pages = pdf_to_markdown_docling(
+                path, page_range=_zero_range, device=settings.docling_device
+            )
+
         if md_pages is None and settings.use_marker_pdf:
             from ocr_kb.ingest.marker_reader import pdf_to_markdown
             md_pages = pdf_to_markdown(path, page_range=_zero_range, device=settings.marker_device)

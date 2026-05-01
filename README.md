@@ -1,17 +1,16 @@
 # ocr-kb — Local OCR Knowledge Base
 
 A fully local, privacy-preserving research knowledge base. Drop in PDFs, images,
-or text files; a locally-running multimodal LLM reads them page by page, extracts
-structured text, describes embedded figures and charts, and stores everything in
-SQLite with full-text search. Ask questions in plain English and get cited answers —
-all on your own hardware, no cloud required.
+or text files; extract structured text and store everything in SQLite with full-text
+search. Ask questions in plain English and get cited answers — all on your own
+hardware, no cloud required.
 
 **Key properties:**
 
-- All inference runs locally via **Ollama** or LM Studio — no API keys, no data leaves your machine
-- Two dedicated model slots: **vision model** for OCR/image extraction, **text model** for enrichment and RAG
-- **Structured markdown extraction** — native-text PDFs are converted to heading-aware, table-formatted markdown with bold figure captions and italic section titles via `pymupdf4llm`; scanned PDFs fall back to the vision model
-- Embedded image extraction — figures, charts, and diagrams in PDFs are automatically described and made searchable
+- **granite-docling by default** — [ibm-granite/granite-docling-258M](https://huggingface.co/ibm-granite/granite-docling-258M) is the primary OCR engine; it handles both digital and scanned PDFs locally with no external server required. Falls back to CPU automatically if CUDA VRAM is occupied by another process (e.g. Ollama)
+- All inference runs locally — no API keys, no data leaves your machine
+- Optional Ollama / LM Studio backend for text enrichment (summaries, key points, RAG answers) and embedded figure captioning
+- **Structured markdown output** — headings, tables, formulas, and lists are preserved as proper markdown, not flattened text
 - Per-run model override — switch models for a single ingest or ask without changing config
 - Deduplication on re-ingest — same file updated in-place, existing tags/category preserved
 - **Hybrid semantic + keyword search** — FTS5 full-text search merged with embeddings via Reciprocal Rank Fusion; supports both Ollama-served embedding models (e.g. `qwen3-embedding:4b`) and sentence-transformers
@@ -25,17 +24,22 @@ all on your own hardware, no cloud required.
 
 ## Hardware requirements
 
-Defaults are tuned for an **RTX 4070 12 GB** running two Ollama models simultaneously:
+**OCR (granite-docling) — no server required:**
+
+| Scenario | Device | Notes |
+|----------|--------|-------|
+| GPU with free VRAM | `DOCLING_DEVICE=cuda` (default) | ~2–3 GB VRAM; fast |
+| GPU occupied by Ollama | automatic CPU fallback | slower but still works |
+| CPU only | `DOCLING_DEVICE=cpu` | works, ~2–5× slower |
+
+**Optional enrichment + RAG (Ollama or LM Studio):**
 
 | Slot | Role | Recommended model | VRAM |
 |------|------|-------------------|------|
-| Vision (OCR + figures) | Reads PDFs, images, describes embedded figures | `llava:7b`, `qwen2.5vl:7b`, `minicpm-v:8b` | ~5–6 GB |
-| Text (enrichment + RAG) | Summaries, key points, RAG answers | `gemma3:4b`, `llama3.2:3b`, `mistral:7b` | ~2–3 GB |
+| Text (enrichment + RAG) | Summaries, key points, RAG answers | `gemma3:4b`, `llama3.2:3b` | ~2–3 GB |
+| Vision (figure captions) | Per-figure descriptions (`EXTRACT_EMBEDDED_IMAGES=true`) | `llava:7b`, `qwen2.5vl:7b` | ~5–6 GB |
 
-Total peak ≈ 8–9 GB, leaving ~3 GB for KV cache and activations.
-
-If you have more VRAM (RTX 3090 24 GB, RTX 4090), raise `IMAGE_DPI=300`,
-`MODEL_MAX_NEW_TOKENS=4096`, and use larger models for better accuracy.
+Enrichment and RAG are optional — basic ingest and search work without any Ollama model loaded.
 
 ---
 
@@ -46,14 +50,14 @@ If you have more VRAM (RTX 3090 24 GB, RTX 4090), raise `IMAGE_DPI=300`,
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 
-# 2. Install the package in editable mode (includes dev dependencies)
-pip install -e ".[dev]"
+# 2. Install the package with docling (primary OCR engine)
+pip install -e ".[dev,docling]"
 
 # 3. Verify
 ocr-kb --help
 ```
 
-Python 3.11 or later is required.
+Python 3.11 or later is required. `docling` pulls in `torch` and `transformers` — the first `ocr-kb ingest` will download the granite-docling-258M weights (~500 MB) from HuggingFace and cache them locally.
 
 ---
 
@@ -152,24 +156,24 @@ Ollama embedding models are routed through `OLLAMA_BASE_URL/v1/embeddings` autom
 
 **PDF extraction — pick a profile:**
 
-Choose the block that matches your hardware in `local.env` (see `local.env.example` for full details):
+Choose the block that matches your setup in `local.env` (see `local.env.example` for full details):
 
-| Profile | Settings | Best for | Speed |
-|---------|----------|----------|-------|
-| **A — instant / CPU-only** | `USE_PDFTEXT=true` | GPU fully used by Ollama, or no GPU | Instant (no models) |
-| **B — high-quality / shared GPU** | `USE_MARKER_PDF=true` `MARKER_DEVICE=cpu` | Ollama running, want structured output | ~30-60 s first PDF |
-| **C — high-quality / dedicated GPU** | `USE_MARKER_PDF=true` `MARKER_DEVICE=cuda` | Spare VRAM ≥ 4 GB, Ollama not loaded | ~10-15 s first PDF |
+| Profile | Key settings | Best for |
+|---------|-------------|----------|
+| **Default — granite-docling on CUDA** | `USE_DOCLING=true` `DOCLING_DEVICE=cuda` | Most setups; automatic CPU fallback when VRAM is occupied |
+| **granite-docling on CPU** | `USE_DOCLING=true` `DOCLING_DEVICE=cpu` | No GPU, or when you need all VRAM for other models |
+| **pdftext + docling** | `USE_PDFTEXT=true` `USE_DOCLING=true` | Speed boost for digital PDFs: pdftext for clean pages, docling for the rest |
+| **marker-pdf (CPU)** | `USE_DOCLING=false` `USE_MARKER_PDF=true` `MARKER_DEVICE=cpu` | Alternative; heavier but different layout model |
 
-The extraction stack tries each layer in order; the first success wins per page:
+The extraction stack tries each enabled layer in order; the first success wins:
 
 1. **pdftext** (`USE_PDFTEXT`) — reads the native PDF text layer with zero ML; instant for digital PDFs
-2. **marker-pdf** (`USE_MARKER_PDF`) — layout-aware markdown via Surya models; correct column order, tables, headings
-3. **pymupdf4llm** (`USE_PYMUPDF4LLM`) — structured markdown from the native text layer; good quality, no model load
-4. **pypdfium2** — plain text fallback; always available
-5. **Surya OCR** (`USE_SURYA_OCR`) — direct detection + recognition (2 models) for scanned pages; lighter than full marker
-6. **Vision model** — Ollama / LM Studio OCR as last resort for scanned pages
-
-The default (`local.env.example` baseline) uses **pymupdf4llm** — no model downloads required, works on any hardware.
+2. **granite-docling** (`USE_DOCLING`, **default on**) — local VLM; handles both digital and scanned PDFs
+3. **marker-pdf** (`USE_MARKER_PDF`) — layout-aware markdown via Surya models
+4. **pymupdf4llm** (`USE_PYMUPDF4LLM`) — structured markdown from the native text layer
+5. **pypdfium2** — plain text fallback; always available
+6. **Surya OCR** (`USE_SURYA_OCR`) — for scanned pages when earlier layers produce blank output
+7. **Vision model** — Ollama / LM Studio OCR as last resort
 
 **Monitoring and error recovery:**
 
@@ -252,15 +256,14 @@ Accepts: PDF, PNG, JPG, TIFF, plain text, Markdown. Directories are processed
 recursively. Re-ingesting the same file updates existing entries in-place —
 existing tags and category are **preserved** if not explicitly specified.
 
-For **native-text PDFs** (most research papers, reports), pages are converted to
-structured markdown using `pymupdf4llm`: headings are detected from font sizes,
-tables are rendered as markdown tables, figure captions are bolded, and running
-headers/footers are stripped. This produces LLM-friendly text without any model calls.
+By default, pages are processed by **granite-docling** — a local VLM that renders
+each page as an image and produces clean, structured markdown including headings,
+tables, formulas, lists, and figure content. It handles both digital and scanned
+PDFs with the same code path. No external server is required.
 
-For **scanned or image-only PDFs** (handwritten notes, photographs), pages are
-rendered as images and sent to the vision model for OCR. Any embedded images
-(figures, charts, diagrams) are described and appended as `[Figure N]: ...`,
-making them searchable and available in RAG responses.
+Optionally, with `EXTRACT_EMBEDDED_IMAGES=true` and an Ollama/LM Studio vision
+model running, PDF-embedded figure objects are additionally captioned and appended
+as `[Figure N]: ...`, making them individually searchable.
 
 ```bash
 # Ingest with summaries and key points
@@ -542,13 +545,14 @@ See `mcp_config.example.json` for full config blocks for Ollama, LM Studio, and 
 ## Typical research workflow
 
 ```bash
-# 1. Start Ollama (runs as a background service after install)
-ollama list   # confirm models are available
+# 1. Ingest a batch of PDFs — granite-docling handles OCR locally, no server needed
+ocr-kb ingest ~/papers/transformers/ --category ml --tags "transformers,attention"
 
-# 2. Check what models are configured
+# Optional: start Ollama to enable summaries, key points, and RAG answers
+ollama list   # confirm models are available
 ocr-kb models
 
-# 3. Ingest a batch of PDFs — figures and diagrams are extracted automatically
+# Ingest with LLM enrichment (requires Ollama)
 ocr-kb ingest ~/papers/transformers/ --category ml --tags "transformers,attention" --summary
 
 # 4. Browse what was ingested
@@ -773,6 +777,7 @@ ocr_kb/
     loader.py              file-type detection and routing
     batch_builder.py       batching for multi-page docs; runs extraction priority chain per page
     pdf_reader.py          PDF → page images + native text (pypdfium2); strips headers/footers
+    docling_reader.py      granite-docling VLM extraction (default); CUDA with auto CPU fallback
     pdftext_reader.py      zero-ML native text extraction via pdftext (instant for digital PDFs)
     pymupdf4llm_reader.py  structured markdown extraction for native-text PDFs (pymupdf4llm)
     marker_reader.py       layout-aware markdown via full marker-pdf pipeline (5 Surya models)
@@ -830,11 +835,11 @@ Pull the model first: `ollama pull llava:7b`. Use `ocr-kb models` to see what's
 available and what's currently configured.
 
 **Out of memory / CUDA OOM during ingest**
-If marker-pdf or Surya OOMs while Ollama is loaded, set `MARKER_DEVICE=cpu` — marker runs
-on CPU and leaves the GPU entirely for Ollama (Profile B in `local.env.example`).
-For vision-model OOM, lower `MAX_IMAGE_PIXELS` (e.g. `921600` for 1280×720) and/or
-`MODEL_MAX_NEW_TOKENS=1024`. To skip embedded image extraction, set
-`EMBEDDED_IMAGE_MIN_PIXELS=40000` or `EXTRACT_EMBEDDED_IMAGES=false`.
+granite-docling automatically falls back to CPU when CUDA OOM is detected (e.g. Ollama
+has a model loaded). You'll see a warning in the logs but the ingest will complete.
+To force CPU from the start: `DOCLING_DEVICE=cpu`. For marker-pdf OOM, set
+`MARKER_DEVICE=cpu`. To skip per-figure captioning, leave `EXTRACT_EMBEDDED_IMAGES=false`
+(the default) or set `EMBEDDED_IMAGE_MIN_PIXELS=40000`.
 
 **No results found when searching**
 FTS5 uses exact token matching — `"transformer"` won't match `"transformers"`.
@@ -842,10 +847,11 @@ Use the exact token or a shared substring. Re-ingest with `--mode html` if the
 original extraction was poor.
 
 **Figure descriptions not appearing**
-Check that `EXTRACT_EMBEDDED_IMAGES=true` (default) and that the PDF actually
-contains vector-embedded images rather than scanned page bitmaps. Scanned PDFs
-have no separate image objects — the page image is the only content, which is
-already OCR'd by the full-page pass.
+`EXTRACT_EMBEDDED_IMAGES` is `false` by default — granite-docling captures figure
+content as part of its full-page OCR pass. If you want additional per-figure prose
+captions, set `EXTRACT_EMBEDDED_IMAGES=true` and ensure an Ollama or LM Studio
+vision model is running. Note this only works for PDFs with vector-embedded image
+objects; scanned page bitmaps are already handled by the full-page OCR.
 
 **MCP server not found by agent**
 Use the absolute path to `ocr-kb-mcp`: `/full/path/to/.venv/bin/ocr-kb-mcp`.

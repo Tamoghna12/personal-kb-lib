@@ -77,8 +77,11 @@ class Settings(BaseSettings):
     image_dpi: int = 150
     min_image_dim: int = 800
     min_pdf_image_dim: int = 1000
-    # Extract embedded images (figures, diagrams) from PDF pages and describe them.
-    extract_embedded_images: bool = True
+    # Extract embedded images (figures, diagrams) from PDF pages and describe them
+    # via the external vision model (Ollama/LM Studio). Disabled by default because
+    # granite-docling already captures figure content in its page-level OCR pass.
+    # Enable only when a vision backend is running and you want extra figure captions.
+    extract_embedded_images: bool = False
     # Minimum pixel area for an embedded image to be sent to the vision model.
     # Filters out tiny icons and decorative elements (default ≈ 100×100).
     embedded_image_min_pixels: int = 10_000
@@ -91,11 +94,19 @@ class Settings(BaseSettings):
     # Use pdftext for zero-ML native text extraction (instant on digital PDFs).
     # Reads the PDF text layer directly — no models loaded.  Scanned pages
     # return short/empty strings and are routed to OCR automatically.
-    use_pdftext: bool = True
+    # Disabled by default so granite-docling processes all pages consistently.
+    # Re-enable alongside use_docling for a fast pre-pass on digital PDFs.
+    use_pdftext: bool = False
     # Use Surya OCR directly: only loads DetectionPredictor + RecognitionPredictor
     # (2 models) instead of the full marker pipeline (5 models + processors).
     # Best for scanned PDFs when you want ML OCR without the full marker overhead.
     use_surya_ocr: bool = False
+    # Use granite-docling (ibm-granite/granite-docling-258M) for VLM-based OCR.
+    # Handles both digital and scanned PDFs. First call downloads model weights
+    # from HuggingFace (~258M params) and caches them locally.
+    use_docling: bool = True
+    # Device for granite-docling. "cuda" is strongly recommended for speed.
+    docling_device: str = "cuda"
     # Use marker-pdf for high-quality layout-aware markdown extraction.
     # Runs Surya neural models (layout + OCR) — first call loads models (~10-30 s).
     # When True, marker-pdf is tried before pymupdf4llm and pypdfium2.
@@ -106,8 +117,8 @@ class Settings(BaseSettings):
     marker_device: str = "cpu"
     # Use pymupdf4llm for structured markdown extraction on native-text PDFs.
     # Produces proper heading hierarchy, bold/italic, and table markdown.
-    # Falls back to raw pypdfium2 text when pymupdf4llm is not installed.
-    use_pymupdf4llm: bool = True
+    # Disabled by default; granite-docling supersedes this for most use cases.
+    use_pymupdf4llm: bool = False
 
     # ── Sub-page chunking ────────────────────────────────────────────────────
     # Split each page into overlapping chunks for more precise retrieval.
