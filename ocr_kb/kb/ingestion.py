@@ -5,6 +5,7 @@ import json
 import sqlite3
 from pathlib import Path
 
+from ocr_kb.ingest.metadata_extractor import DocMetadata
 from ocr_kb.kb.exporter import _entry_to_markdown
 from ocr_kb.kb.schema import KBEntry
 from ocr_kb.kb.store import save
@@ -14,7 +15,12 @@ from ocr_kb.postprocess.markdown_converter import plain_to_markdown
 from ocr_kb.settings import Settings
 
 
-def page_result_to_entry(result: PageResult, tags: str, category: str) -> KBEntry:
+def page_result_to_entry(
+    result: PageResult,
+    tags: str,
+    category: str,
+    metadata: DocMetadata | None = None,
+) -> KBEntry:
     """Convert a pipeline PageResult to a KBEntry ready for upsert."""
     if result.mode == "html":
         html = clean_html(result.text)
@@ -43,6 +49,12 @@ def page_result_to_entry(result: PageResult, tags: str, category: str) -> KBEntr
         key_points=result.key_points or "",
         summary=result.summary or "",
         enriched_metadata=result.enriched_metadata or "",
+        doc_title=metadata.title if metadata else "",
+        authors=metadata.authors if metadata else "",
+        year=metadata.year if metadata else None,
+        doi=metadata.doi if metadata else "",
+        abstract=metadata.abstract if metadata else "",
+        journal=metadata.journal if metadata else "",
     )
 
 
@@ -62,12 +74,18 @@ def save_file_result(
 
     saved = 0
     errors = list(file_result.errors)
+    meta = file_result.metadata
     for page in file_result.pages:
         if is_blank(page.text):
             continue
         try:
-            entry = page_result_to_entry(page, tags, category)
-            entry.embedding = embed_text(page.text, settings)
+            entry = page_result_to_entry(page, tags, category, metadata=meta)
+            entry.embedding = embed_text(
+                page.text,
+                settings,
+                title=meta.title if meta else "",
+                abstract=meta.abstract if meta else "",
+            )
             save(conn, entry)
             settings.markdown_dir.mkdir(parents=True, exist_ok=True)
             stem = Path(entry.source_path).stem

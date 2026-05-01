@@ -128,8 +128,16 @@ class Settings(BaseSettings):
 
     # ── Embeddings ──────────────────────────────────────────────────────────
     enable_embeddings: bool = True
-    embedding_model: str = "all-MiniLM-L6-v2"
+    # Change default to specter2 for academic paper retrieval.
+    # Falls back to all-MiniLM-L6-v2 if the 'adapters' library is not installed.
+    embedding_model: str = "specter2"
     max_retries: int = 3
+
+    # ── Metadata extraction ─────────────────────────────────────────────────
+    # Automatically extract title, authors, year, DOI, abstract from the first
+    # page of each ingested document. Uses Crossref API (no key needed) then
+    # LLM fallback.
+    enable_metadata_extraction: bool = True
 
     # ── File watcher ────────────────────────────────────────────────────────
     watch_dir: Path = Path("data/inputs")

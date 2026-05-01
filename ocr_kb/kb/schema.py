@@ -26,4 +26,10 @@ class KBEntry:
     enriched_metadata: str = ""
     embedding: Optional[list[float]] = field(default=None, repr=False)
     chunk_index: int = 0
+    doc_title: str = ""
+    authors: str = ""        # comma-separated author names
+    year: int | None = None
+    doi: str = ""
+    abstract: str = ""
+    journal: str = ""
     id: Optional[int] = field(default=None)

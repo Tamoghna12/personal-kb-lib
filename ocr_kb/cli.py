@@ -93,6 +93,7 @@ def ingest(
     db: Optional[Path] = typer.Option(None, "--db", help="Path to SQLite DB."),
     auto_compile: bool = typer.Option(False, "--auto-compile", help="Compile the wiki after ingestion."),
     auto_lint: bool = typer.Option(False, "--auto-lint", help="Lint the wiki after compilation."),
+    metadata: bool = typer.Option(True, "--metadata/--no-metadata", help="Extract title/authors/year/DOI/abstract from first page."),
 ) -> None:
     """Ingest a file or folder into the knowledge base."""
     if not path.exists():
@@ -146,6 +147,7 @@ def ingest(
             vision_model=vision_model or None,
             text_model=text_model or None,
             on_page=_on_page,
+            extract_metadata=metadata,
         )
 
     batch_table = Table(title="Ingest Summary", show_lines=False)
@@ -211,6 +213,9 @@ def search(
     category: Optional[str] = typer.Option(None, "--category", "-c", help="Filter by exact category."),
     tag: Optional[str] = typer.Option(None, "--tag", "-t", help="Filter by tag (substring)."),
     after: Optional[str] = typer.Option(None, "--after", help="Only entries after ISO date, e.g. 2024-01-01."),
+    author: Optional[str] = typer.Option(None, "--author", "-a", help="Filter by author name (substring)."),
+    year: Optional[int] = typer.Option(None, "--year", "-y", help="Filter by publication year."),
+    doi: Optional[str] = typer.Option(None, "--doi", help="Filter by DOI (substring)."),
     db: Optional[Path] = typer.Option(None, "--db", help="Path to SQLite DB."),
 ) -> None:
     """Full-text search the knowledge base with optional filters."""
@@ -218,10 +223,14 @@ def search(
     s = get_settings()
     setup_logging(s.kb_dir / "logs")
 
-    if any([source, category, tag, after]):
+    if any([source, category, tag, after, author, year, doi]):
         with SearchTimer() as t:
-            results = filtered_search(conn, query, source=source, category=category,
-                                      tag=tag, after=after, limit=limit)
+            results = filtered_search(
+                conn, query,
+                source=source, category=category, tag=tag, after=after,
+                author=author or None, year=year, doi=doi or None,
+                limit=limit,
+            )
         log_search_query(query, len(results), t["elapsed_ms"])
     else:
         with SearchTimer() as t:
@@ -238,7 +247,10 @@ def search(
     table.add_column("Pg", width=4)
     table.add_column("Category", style="green")
     table.add_column("Tags", style="blue")
-    table.add_column("Excerpt", no_wrap=False, max_width=60)
+    table.add_column("Author", style="magenta", max_width=20)
+    table.add_column("Year", style="dim", width=6)
+    table.add_column("DOI", style="dim", max_width=20)
+    table.add_column("Excerpt", no_wrap=False, max_width=50)
 
     for entry in results:
         excerpt = (entry.markdown or entry.raw_text)[:200].replace("\n", " ")
@@ -248,6 +260,9 @@ def search(
             str(entry.page_number),
             entry.category or "—",
             entry.tags or "—",
+            entry.authors or "—",
+            str(entry.year) if entry.year else "—",
+            entry.doi or "—",
             excerpt,
         )
 
@@ -283,6 +298,18 @@ def show(
     meta_table.add_row("Source", entry.source_path)
     meta_table.add_row("Category", entry.category or "—")
     meta_table.add_row("Tags", entry.tags or "—")
+    if entry.doc_title:
+        meta_table.add_row("Title", entry.doc_title)
+    if entry.authors:
+        meta_table.add_row("Authors", entry.authors)
+    if entry.year:
+        meta_table.add_row("Year", str(entry.year))
+    if entry.journal:
+        meta_table.add_row("Journal", entry.journal)
+    if entry.doi:
+        meta_table.add_row("DOI", entry.doi)
+    if entry.abstract:
+        meta_table.add_row("Abstract", entry.abstract[:400] + ("..." if len(entry.abstract) > 400 else ""))
     if entry.summary:
         meta_table.add_row("Summary", entry.summary[:300])
     if entry.key_points:

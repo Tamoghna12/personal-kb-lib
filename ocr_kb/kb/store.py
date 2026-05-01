@@ -14,6 +14,12 @@ CREATE TABLE IF NOT EXISTS entries (
     source_path   TEXT    NOT NULL,
     page_number   INTEGER NOT NULL,
     chunk_index   INTEGER NOT NULL DEFAULT 0,
+    doc_title          TEXT    NOT NULL DEFAULT '',
+    authors            TEXT    NOT NULL DEFAULT '',
+    year               INTEGER,
+    doi                TEXT    NOT NULL DEFAULT '',
+    abstract           TEXT    NOT NULL DEFAULT '',
+    journal            TEXT    NOT NULL DEFAULT '',
     raw_text      TEXT    NOT NULL DEFAULT '',
     markdown      TEXT    NOT NULL DEFAULT '',
     html          TEXT    NOT NULL DEFAULT '',
@@ -89,6 +95,20 @@ def init_db(db_path: Path) -> sqlite3.Connection:
         conn.commit()
     except sqlite3.OperationalError:
         pass
+    _NEW_COLS = [
+        "ALTER TABLE entries ADD COLUMN doc_title TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE entries ADD COLUMN authors TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE entries ADD COLUMN year INTEGER",
+        "ALTER TABLE entries ADD COLUMN doi TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE entries ADD COLUMN abstract TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE entries ADD COLUMN journal TEXT NOT NULL DEFAULT ''",
+    ]
+    for _col_sql in _NEW_COLS:
+        try:
+            conn.execute(_col_sql)
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
     conn.executescript(_DLQ_DDL)
     return conn
 
@@ -98,6 +118,12 @@ def _entry_to_row(entry: KBEntry) -> dict[str, Any]:
         "source_path": entry.source_path,
         "page_number": entry.page_number,
         "chunk_index": entry.chunk_index,
+        "doc_title": entry.doc_title,
+        "authors": entry.authors,
+        "year": entry.year,
+        "doi": entry.doi,
+        "abstract": entry.abstract,
+        "journal": entry.journal,
         "raw_text": entry.raw_text,
         "markdown": entry.markdown,
         "html": entry.html,
@@ -147,7 +173,9 @@ def save(conn: sqlite3.Connection, entry: KBEntry) -> KBEntry:
                 raw_text=:raw_text, markdown=:markdown, html=:html,
                 layout_blocks=:layout_blocks, tags=:tags, category=:category,
                 key_points=:key_points, summary=:summary,
-                enriched_metadata=:enriched_metadata, embedding=:embedding
+                enriched_metadata=:enriched_metadata, embedding=:embedding,
+                doc_title=:doc_title, authors=:authors, year=:year,
+                doi=:doi, abstract=:abstract, journal=:journal
             WHERE id=:id
             """,
             {**row, "tags": effective_tags, "category": effective_category, "id": existing["id"]},
@@ -160,11 +188,15 @@ def save(conn: sqlite3.Connection, entry: KBEntry) -> KBEntry:
         cur = conn.execute(
             """
             INSERT INTO entries
-                (source_path, page_number, chunk_index, raw_text, markdown, html,
+                (source_path, page_number, chunk_index,
+                 doc_title, authors, year, doi, abstract, journal,
+                 raw_text, markdown, html,
                  layout_blocks, tags, category, key_points, summary,
                  enriched_metadata, embedding, created_at)
             VALUES
-                (:source_path, :page_number, :chunk_index, :raw_text, :markdown, :html,
+                (:source_path, :page_number, :chunk_index,
+                 :doc_title, :authors, :year, :doi, :abstract, :journal,
+                 :raw_text, :markdown, :html,
                  :layout_blocks, :tags, :category, :key_points, :summary,
                  :enriched_metadata, :embedding, :created_at)
             """,

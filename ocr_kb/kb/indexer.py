@@ -57,6 +57,9 @@ def filtered_search(
     category: str | None = None,
     tag: str | None = None,
     after: str | None = None,
+    author: str | None = None,
+    year: int | None = None,
+    doi: str | None = None,
     limit: int = 20,
 ) -> list[KBEntry]:
     """FTS search with optional column-level filters.
@@ -65,6 +68,9 @@ def filtered_search(
     *category* — exact case-insensitive match
     *tag*      — substring match inside the comma-separated tags field
     *after*    — ISO-8601 date/datetime; only entries with created_at >= this value
+    *author*   — substring match on authors field (case-insensitive)
+    *year*     — exact match on year field
+    *doi*      — substring match on doi field (case-insensitive)
     """
     conditions = ["entries_fts MATCH ?"]
     params: list = [_sanitize_fts(query)]
@@ -81,6 +87,15 @@ def filtered_search(
     if after:
         conditions.append("e.created_at >= ?")
         params.append(after)
+    if author:
+        conditions.append("LOWER(e.authors) LIKE ?")
+        params.append(f"%{author.lower()}%")
+    if year:
+        conditions.append("e.year = ?")
+        params.append(int(year))
+    if doi:
+        conditions.append("LOWER(e.doi) LIKE ?")
+        params.append(f"%{doi.lower()}%")
 
     params.append(limit)
     where = " AND ".join(conditions)
@@ -146,6 +161,8 @@ def semantic_search(
         entry = _row_to_entry(row)
         if entry.embedding is None:
             continue
+        if len(entry.embedding) != len(query_embedding):
+            continue
         score = _cosine(query_embedding, entry.embedding, qmag)
         results.append((entry, score))
 
@@ -177,8 +194,8 @@ def hybrid_search(
 
     if settings.enable_embeddings:
         try:
-            from ocr_kb.model.embedder import embed_text
-            qemb = embed_text(query, settings)
+            from ocr_kb.model.embedder import embed_query
+            qemb = embed_query(query, settings)
             if qemb:
                 for rank, (entry, _score) in enumerate(semantic_search(conn, qemb, limit=limit * 2)):
                     eid = entry.id  # type: ignore[arg-type]

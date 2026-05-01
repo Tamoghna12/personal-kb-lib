@@ -151,6 +151,25 @@ def format_wiki_concept_summary_prompt(concept: str, snippets: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Metadata extraction prompt  (bibliographic info from first page of academic PDF)
+# ---------------------------------------------------------------------------
+
+METADATA_EXTRACTION_PROMPT_TEMPLATE = (
+    "Extract bibliographic metadata from this academic paper's first page. "
+    "Return ONLY valid JSON with exactly these fields "
+    "(empty string \"\" if unknown, null for year if unknown):\n\n"
+    '{{"title": "...", "authors": "First Last, First Last", '
+    '"year": 2024, "doi": "10.xxxx/...", '
+    '"abstract": "...", "journal": "..."}}\n\n'
+    "First page text:\n---\n{text}\n---"
+)
+
+
+def format_metadata_prompt(text: str) -> str:
+    return METADATA_EXTRACTION_PROMPT_TEMPLATE.format(text=text[:3000])
+
+
+# ---------------------------------------------------------------------------
 # RAG query prompt  (question-answering over retrieved KB context)
 # ---------------------------------------------------------------------------
 

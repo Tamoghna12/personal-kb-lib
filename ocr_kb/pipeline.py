@@ -8,6 +8,7 @@ from typing import Literal
 
 from ocr_kb.ingest.batch_builder import BatchItem, build_batch
 from ocr_kb.ingest.loader import SUPPORTED_SUFFIXES
+from ocr_kb.ingest.metadata_extractor import DocMetadata
 from ocr_kb.model import OcrRequest, run_enrichment, run_ocr
 from ocr_kb.prompts import (
     IMAGE_FIGURE_PROMPT,
@@ -43,6 +44,7 @@ class FileResult:
     source_path: Path
     pages: list[PageResult] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    metadata: DocMetadata | None = None
 
     @property
     def succeeded(self) -> bool:
@@ -212,6 +214,7 @@ def process_file(
     vision_model: str | None = None,
     text_model: str | None = None,
     on_page: Callable[[int, int], None] | None = None,
+    extract_metadata: bool = False,
 ) -> FileResult:
     """Process a single file and return one PageResult per page.
 
@@ -263,6 +266,14 @@ def process_file(
         if on_page:
             on_page(i, total)
 
+    if extract_metadata and result.pages:
+        from ocr_kb.ingest.metadata_extractor import extract_metadata as _extract_meta
+        first_text = result.pages[0].text
+        try:
+            result.metadata = _extract_meta(first_text, settings)
+        except Exception as exc:
+            result.errors.append(f"Metadata extraction failed: {exc}")
+
     return result
 
 
@@ -278,6 +289,7 @@ def process_path(
     vision_model: str | None = None,
     text_model: str | None = None,
     on_page: Callable[[int, int], None] | None = None,
+    extract_metadata: bool = False,
 ) -> list[FileResult]:
     """Process a single file or every supported file under a directory."""
     if path.is_file():
@@ -293,6 +305,7 @@ def process_path(
                 vision_model=vision_model,
                 text_model=text_model,
                 on_page=on_page,
+                extract_metadata=extract_metadata,
             )
         ]
 
@@ -313,6 +326,7 @@ def process_path(
             vision_model=vision_model,
             text_model=text_model,
             on_page=on_page,
+            extract_metadata=extract_metadata,
         )
         for f in files
     ]
