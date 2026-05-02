@@ -154,19 +154,29 @@ def format_wiki_concept_summary_prompt(concept: str, snippets: str) -> str:
 # Metadata extraction prompt  (bibliographic info from first page of academic PDF)
 # ---------------------------------------------------------------------------
 
-METADATA_EXTRACTION_PROMPT_TEMPLATE = (
-    "Extract bibliographic metadata from this academic paper's first page. "
-    "Return ONLY valid JSON with exactly these fields "
-    "(empty string \"\" if unknown, null for year if unknown):\n\n"
-    '{{"title": "...", "authors": "First Last, First Last", '
-    '"year": 2024, "doi": "10.xxxx/...", '
-    '"abstract": "...", "journal": "..."}}\n\n'
-    "First page text:\n---\n{text}\n---"
-)
+METADATA_EXTRACTION_PROMPT_TEMPLATE = """\
+Extract bibliographic metadata from the academic paper text below.
+
+Rules:
+- Output ONLY the JSON object. No explanation, no prose, no markdown fences.
+- Use empty string "" for any text field you cannot determine.
+- Use null for year if unknown.
+- Authors: comma-separated full names, e.g. "Jane Smith, John Doe, Alice Wang".
+- Abstract: copy the abstract verbatim if present; otherwise "".
+
+JSON schema (output exactly this structure):
+{{"title": "", "authors": "", "year": null, "doi": "", "abstract": "", "journal": ""}}
+
+Paper text:
+---
+{text}
+---
+
+JSON:"""
 
 
 def format_metadata_prompt(text: str) -> str:
-    return METADATA_EXTRACTION_PROMPT_TEMPLATE.format(text=text[:3000])
+    return METADATA_EXTRACTION_PROMPT_TEMPLATE.format(text=text[:4000])
 
 
 # ---------------------------------------------------------------------------
