@@ -11,9 +11,12 @@ hardware, no cloud required.
 - All inference runs locally — no API keys, no data leaves your machine
 - Optional Ollama / LM Studio backend for text enrichment (summaries, key points, RAG answers) and embedded figure captioning
 - **Structured markdown output** — headings, tables, formulas, and lists are preserved as proper markdown, not flattened text
+- **Automatic metadata extraction** — title, authors, year, DOI, abstract, and journal are parsed from the first page on ingest; uses the free Crossref API for DOI-indexed papers, falls back to LLM extraction otherwise
+- **SPECTER2 embeddings (default)** — [allenai/specter2](https://huggingface.co/allenai/specter2_base) asymmetric embeddings purpose-built for academic paper retrieval; uses a separate adapter for queries vs. documents for higher precision
+- **Preprint-aware extraction** — automatically detects and strips sequential line numbers added by medRxiv/bioRxiv for reviewer comments, producing clean text regardless of preprint format
 - Per-run model override — switch models for a single ingest or ask without changing config
 - Deduplication on re-ingest — same file updated in-place, existing tags/category preserved
-- **Hybrid semantic + keyword search** — FTS5 full-text search merged with embeddings via Reciprocal Rank Fusion; supports both Ollama-served embedding models (e.g. `qwen3-embedding:4b`) and sentence-transformers
+- **Hybrid semantic + keyword search** — FTS5 full-text search merged with embeddings via Reciprocal Rank Fusion; filter by author, year, DOI, tag, or category
 - RAG question-answering with inline citations and source map
 - **Observability** — structured logging of ingest speed, search latency, and errors to `kb_data/logs/`
 - **Error recovery** — failed documents are tracked in a dead-letter queue with retry logic
@@ -50,8 +53,11 @@ Enrichment and RAG are optional — basic ingest and search work without any Oll
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 
-# 2. Install the package with docling (primary OCR engine)
-pip install -e ".[dev,docling]"
+# 2. Install the package with docling (primary OCR engine) + SPECTER2 embeddings
+pip install -e ".[dev,docling,specter2]"
+
+# specter2 adds the 'adapters' library for asymmetric academic embeddings.
+# If you skip it, embeddings fall back to all-MiniLM-L6-v2 automatically.
 
 # 3. Verify
 ocr-kb --help
@@ -145,14 +151,36 @@ RAG_CHUNK_CHARS=600               # chars per retrieved snippet in ask
 ```bash
 ENABLE_EMBEDDINGS=true            # hybrid FTS5 + semantic search via Reciprocal Rank Fusion
 
-# sentence-transformers model (HuggingFace, auto-cached):
-EMBEDDING_MODEL=all-MiniLM-L6-v2
+# SPECTER2 (default) — asymmetric academic embeddings from AllenAI.
+# Uses a different adapter for indexing documents vs. querying, giving
+# better precision on paper retrieval. Requires pip install 'ocr-kb[specter2]'.
+# Falls back to all-MiniLM-L6-v2 automatically if adapters is not installed.
+EMBEDDING_MODEL=specter2
 
-# OR an Ollama-served embedding model (name:tag format auto-detected):
-EMBEDDING_MODEL=qwen3-embedding:4b
+# Alternative: plain sentence-transformers model (HuggingFace, auto-cached):
+# EMBEDDING_MODEL=all-MiniLM-L6-v2
+
+# Alternative: Ollama-served embedding model (name:tag format auto-detected):
+# EMBEDDING_MODEL=qwen3-embedding:4b
 ```
 
 Ollama embedding models are routed through `OLLAMA_BASE_URL/v1/embeddings` automatically — no extra config needed. For sentence-transformers: `pip install sentence-transformers`. If neither is available, search degrades to FTS5-only.
+
+**Metadata extraction:**
+
+```bash
+ENABLE_METADATA_EXTRACTION=true   # on by default; extracts title, authors, year,
+                                  # DOI, abstract, journal from the first page
+```
+
+Metadata uses the free [Crossref API](https://api.crossref.org) (no key needed) when a DOI is detected, and falls back to LLM extraction otherwise. Extracted metadata is stored in the DB and exposed via `search --author/--year/--doi` filters and `show`.
+
+**Vision model timeout:**
+
+```bash
+VISION_TIMEOUT=120                # seconds per Ollama/LM Studio OCR call
+                                  # raise if figure-heavy pages time out (default 120)
+```
 
 **PDF extraction — pick a profile:**
 
@@ -247,8 +275,10 @@ ocr-kb ingest <path> [options]
 | `--tags TEXT` | — | Comma-separated tags, e.g. `"ml,paper,2024"` |
 | `--category TEXT` | — | Category label, e.g. `"biology"` |
 | `--mode [text\|html]` | `text` | `html` preserves document structure |
+| `--metadata/--no-metadata` | on | Extract title, authors, year, DOI, abstract, journal from first page |
 | `--key-points` | off | Extra LLM pass to extract key points per page |
 | `--summary` | off | Extra LLM pass to generate a one-paragraph summary |
+| `--pages TEXT` | all | Page range, e.g. `"1,3-5"` — re-ingest specific pages only |
 | `--vision-model TEXT` | from config | Override vision/OCR model for this run only |
 | `--text-model TEXT` | from config | Override text/enrichment model for this run only |
 
@@ -323,12 +353,17 @@ ocr-kb search <query> [options]
 | `--source TEXT` | Restrict to entries whose source path contains this substring |
 | `--category TEXT` | Exact category match |
 | `--tag TEXT` | Tags contain this value |
+| `--author/-a TEXT` | Filter by author name (partial match) |
+| `--year/-y INT` | Filter by publication year |
+| `--doi TEXT` | Exact DOI match |
 | `--after YYYY-MM-DD` | Only entries ingested on or after this date |
 
 ```bash
 ocr-kb search "attention mechanism"
 ocr-kb search "loss function" --category lecture-notes --after 2024-01-01
 ocr-kb search "Figure 3" --source "goodfellow"    # search figure descriptions
+ocr-kb search "malnutrition" --author "Chen" --year 2025
+ocr-kb search "transformer" --doi "10.1145/3534678.3539087"
 ```
 
 Natural language queries work — question marks and special characters are
@@ -343,8 +378,9 @@ handled automatically. Note: FTS5 uses exact token matching (no stemming), so
 ocr-kb show <id>
 ```
 
-Prints full content: source path, page, category, tags, ingestion date, summary,
-key points, and extracted text (including any figure descriptions). Use the ID
+Prints full content: source path, page, category, tags, ingestion date, and extracted text
+(including any figure descriptions). When metadata was extracted on ingest, also shows the
+full bibliographic block — title, authors, year, journal, DOI, and abstract. Use the ID
 shown in `search` or `recent` output. `--open` launches the source file.
 
 ---
@@ -545,39 +581,42 @@ See `mcp_config.example.json` for full config blocks for Ollama, LM Studio, and 
 ## Typical research workflow
 
 ```bash
-# 1. Ingest a batch of PDFs — granite-docling handles OCR locally, no server needed
-ocr-kb ingest ~/papers/transformers/ --category ml --tags "transformers,attention"
+# 1. Ingest a batch of PDFs — granite-docling handles OCR locally, no server needed.
+#    --metadata is on by default: extracts title, authors, year, DOI, abstract via Crossref.
+ocr-kb ingest ~/papers/neuroscience/ --category neuroscience --tags "review,2025"
 
-# Optional: start Ollama to enable summaries, key points, and RAG answers
+# 2. Optional: start Ollama to enable summaries, key points, and RAG answers
 ollama list   # confirm models are available
 ocr-kb models
 
-# Ingest with LLM enrichment (requires Ollama)
-ocr-kb ingest ~/papers/transformers/ --category ml --tags "transformers,attention" --summary
+# 3. Ingest with LLM enrichment (requires Ollama)
+ocr-kb ingest ~/papers/neuroscience/ --summary --key-points
 
-# 4. Browse what was ingested
+# 4. Browse what was ingested; check extracted metadata
 ocr-kb recent --limit 30
+ocr-kb show 12    # shows bibliographic metadata block + full page text
 
-# 5. Ask questions — figure descriptions are included in context
-ocr-kb ask "What accuracy do the transformer models report on WMT14?"
+# 5. Search by content, author, year, or DOI
+ocr-kb search "synaptic plasticity" --category neuroscience
+ocr-kb search "LTP" --author "Bliss" --year 2024
+ocr-kb search "" --doi "10.1038/s41586-024-00001-0"   # retrieve a specific paper
+
+# 6. Ask questions — RAG over all ingested pages, with citations
+ocr-kb ask "What mechanisms underlie long-term potentiation?"
 ocr-kb ask "What does Figure 3 show?" --context 8
 
-# 6. Search for specific content or figures
-ocr-kb search "attention head" --category ml
-ocr-kb search "Figure" --source "vaswani"    # find entries with figure descriptions
-
 # 7. Use a better model for a specific query
-ocr-kb ask "Summarise the architecture" --text-model gemma3:12b
+ocr-kb ask "Summarise the key findings on BDNF" --text-model gemma3:12b
 
 # 8. Organise entries
-ocr-kb retag --query "vaswani" --add "original-transformer,reviewed"
+ocr-kb retag --query "hebbian" --add "theory,reviewed"
 
 # 9. Build the wiki incrementally
-ocr-kb compile-wiki --since 2024-06-01
+ocr-kb compile-wiki --since 2025-01-01
 ocr-kb lint-wiki
 
 # 10. Export to Obsidian
-ocr-kb export --format obsidian --out ~/obsidian-vault/ml-kb --filter-category ml
+ocr-kb export --format obsidian --out ~/obsidian-vault/phd-kb --filter-category neuroscience
 ```
 
 ---
@@ -777,15 +816,18 @@ ocr_kb/
     loader.py              file-type detection and routing
     batch_builder.py       batching for multi-page docs; runs extraction priority chain per page
     pdf_reader.py          PDF → page images + native text (pypdfium2); strips headers/footers
-    docling_reader.py      granite-docling VLM extraction (default); CUDA with auto CPU fallback
+    docling_reader.py      granite-docling VLM extraction (default); CUDA with auto CPU fallback;
+                           strips preprint line numbers (medRxiv/bioRxiv sequential numbering)
     pdftext_reader.py      zero-ML native text extraction via pdftext (instant for digital PDFs)
     pymupdf4llm_reader.py  structured markdown extraction for native-text PDFs (pymupdf4llm)
     marker_reader.py       layout-aware markdown via full marker-pdf pipeline (5 Surya models)
     surya_reader.py        direct Surya OCR — detection + recognition only (2 models, lighter)
     image_reader.py        image loading and pre-processing
+    metadata_extractor.py  bibliographic metadata: DOI→Crossref API, LLM fallback
   model/
-    glm_ocr_backend.py vision model client — routes to Ollama or LM Studio
+    glm_ocr_backend.py vision model client — routes to Ollama or LM Studio (VISION_TIMEOUT aware)
     gemma_backend.py   text model client — routes to Ollama or LM Studio
+    embedder.py        SPECTER2 (proximity/adhoc_query adapters) and sentence-transformers
   postprocess/
     html_parser.py     HTML cleaning (BeautifulSoup)
     markdown_converter.py HTML/plain → Markdown
@@ -862,13 +904,26 @@ The model name must exactly match the identifier shown in LM Studio's server pan
 (e.g. `gemma-4-it`, not `Gemma 4 IT`). Case-sensitive.
 
 **Embeddings disabled / semantic search not working**
-By default, `ENABLE_EMBEDDINGS=true` and semantic search is enabled (via hybrid RRF fusion with FTS5).
-If you see `"sentence-transformers is not installed"` warnings, install it:
+By default, `ENABLE_EMBEDDINGS=true` and `EMBEDDING_MODEL=specter2`. If you see adapter or embedding warnings:
 ```bash
-pip install sentence-transformers
+# Install SPECTER2 support (recommended for academic papers):
+pip install 'ocr-kb[specter2]'   # installs the 'adapters' library
+
+# Or fall back to all-MiniLM-L6-v2 (no extra install, just change config):
+# EMBEDDING_MODEL=all-MiniLM-L6-v2
 ```
-If you want to disable embeddings entirely (e.g. to reduce memory), set `ENABLE_EMBEDDINGS=false` in `local.env`.
-Search will still work via FTS5 alone.
+To disable embeddings entirely (reduces memory, FTS5-only search):
+```bash
+ENABLE_EMBEDDINGS=false
+```
+If you switch embedding models after ingesting documents, re-ingest to regenerate vectors — old embeddings at a different dimension are skipped automatically.
+
+**Vision model pages timing out**
+If some pages fail with `Request timed out`, raise the timeout (default is 120 s):
+```bash
+VISION_TIMEOUT=180    # seconds per vision-model API call
+```
+This happens when the Ollama/LM Studio OCR fallback is called for figure-heavy pages that take longer than the default to process.
 
 **Failed documents in dead-letter queue**
 If ingestion fails partway through a batch, use `ocr-kb dlq` to inspect and retry:
